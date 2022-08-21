@@ -15,7 +15,7 @@ function use_magic_bitboard(arr::AbstractVector, mask::UInt64, magic::UInt64, sh
 end
 
 function get_lookup_index(mask::UInt64, magic::UInt64, shift::Integer, query::UInt64)
-    return ((query&mask)*magic)>>shift
+    return (((query&mask)*magic)>>shift)+1
 end
 
 struct DONTCARE end;
@@ -86,10 +86,14 @@ end
 
 
 
-
-
-function verify_magic_bitboard(mask::UInt64,magic::UInt64, shift, f::Function, return_type::Type)
-
+"""
+answer_table: An iterable of occupancy and answers.
+"""
+function verify_magic_bitboard(answer_table,magic::UInt64, shift, f::Function, return_type::Type)
+    A = Vector{Union{return_type, DONTCARE}}(undef, 1<<(64-shift))
+    for r, ans in answer_table
+        
+    end
 end
 """
 The mask suggests all the combinations possible.
