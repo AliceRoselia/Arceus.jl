@@ -6,6 +6,21 @@ struct magicBitboard{resultType}
     shift::Int8
 end
 
+struct maskedBitsIterator
+    mask::UInt64
+    reverse_mask::UInt64
+    maskedBitsIterator(mask::UInt64) = new(mask,~mask)
+    maskedBitsIterator(mask) = maskedBitsIterator(UInt64(mask))
+end
+Base.iterate(::maskedBitsIterator) = UInt64(0),UInt64(0)
+
+function Base.iterate(X::maskedBitsIterator, state)
+    ans = X.mask&((state|X.reverse_mask)+1)
+
+    return ifelse(ans==0, nothing, (ans,ans))
+end
+
+
 function use_magic_bitboard(X::magicBitboard, query::UInt64)
     return use_magic_bitboard(X.ans, mask, magic, shift, query)
 end
