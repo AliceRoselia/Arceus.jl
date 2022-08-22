@@ -106,7 +106,7 @@ answer_table: An iterable of occupancy and answers.
 """
 function verify_magic_bitboard(answer_table,magic::UInt64, shift, f::Function, return_type::Type)
     A = Vector{Union{return_type, DONTCARE}}(undef, 1<<(64-shift))
-    for traits, ans in answer_table
+    for (traits, ans) in answer_table
         error("not implemented")
     end
 end
