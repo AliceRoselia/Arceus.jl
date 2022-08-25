@@ -106,9 +106,16 @@ answer_table: An iterable of occupancy and answers.
 """
 function verify_magic_bitboard(answer_table,magic::UInt64, shift, f::Function, return_type::Type)
     A = Vector{Union{return_type, DONTCARE}}(undef, 1<<(64-shift))
+    A.= DONTCARE
     for (traits, ans) in answer_table
-        error("not implemented")
+        index = ((traits*magic)>>shift)+1
+        if (A[index] === DONTCARE)
+            A[index] = ans
+        elseif (A[index] != ans)
+            return false
+        end
     end
+    return true
 end
 """
 The mask suggests all the combinations possible.
@@ -118,8 +125,14 @@ The DONTCARE suggests that the magic could do whatever it wants.
 
 """
 function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
-    for i in search_space(mask)
+    answer_table = Dict{UInt64, return_type}()
+    #We get a hash table but not a perfect one so we need to do it again.
+    for i in maskedBitsIterator(mask)
         Temp::Union{return_type, DONTCARE} = f(i)
+        if Temp !== DONTCARE
+            answer_table[i] = Temp
+        end
     end
+    answer_table = collect(answer_table)
     
 end
