@@ -104,7 +104,7 @@ end
 """
 answer_table: An iterable of occupancy and answers.
 """
-function verify_magic_bitboard(answer_table,magic::UInt64, shift, f::Function, return_type::Type)
+function verify_magic_bitboard(answer_table,magic::UInt64, shift, return_type::Type)
     A = Vector{Union{return_type, DONTCARE}}(undef, 1<<(64-shift))
     A.= DONTCARE
     for (traits, ans) in answer_table
@@ -124,6 +124,14 @@ f should return Union{return_type, DONTCARE}
 The DONTCARE suggests that the magic could do whatever it wants.
 
 """
+function get_guess()
+    error("working in progress.")
+end
+
+function get_new_guess(guess)
+    error("working in progress.")
+end
+
 function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
     answer_table = Dict{UInt64, return_type}()
     #We get a hash table but not a perfect one so we need to do it again.
@@ -135,4 +143,18 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
     end
     answer_table = collect(answer_table)
     #Now, we need to find the perfect hash that solves this answer table.
+    guess = get_guess() #Can change if needed.
+    shift = get_shift(mask)
+    guess_limits = 1000000 # can change or make this a param later.
+    limit = guess_limits
+    while !(verify_magic_bitboard(answer_table, guess, shift, return_type))
+        guess = get_new_guess(guess)
+        limit -= 1
+        if (limit <= 0)
+            shift -= 1
+            limit = guess_limits
+        end
+    end
+    return guess, shift
+    #You can construct later.
 end
