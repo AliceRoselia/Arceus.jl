@@ -77,3 +77,12 @@ Can be "or"-ed to get parent.
 
 
 
+
+
+Fatal flaw found:
+
+Imagine QUerying for _____________10
+And now looking at if each element ends in 00 or 11
+and there are many ending in __ 
+
+Horrible.
