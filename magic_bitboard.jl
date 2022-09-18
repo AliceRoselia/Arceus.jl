@@ -134,5 +134,5 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
         end
     end
     answer_table = collect(answer_table)
-    
+    #Now, we need to find the perfect hash that solves this answer table.
 end
