@@ -55,3 +55,25 @@ Now, if ---- -> 11-- and --11
 and comes 1001...
 could match with 11-- to become... 
 1--- -> 1001, 11--
+Now, the matching can take place unambiguously.
+Because imagine... 1_ comes... 10 would be matched before it could become _0
+
+
+Now, 
+
+---- can be represented as
+
+11111111
+
+With 1 in the former saying "can be 1" and 1 in the latter saying "can be 0"
+
+00001111
+
+Means Can only be 0000
+
+01011110 means can be 0-0-
+
+Can be "or"-ed to get parent.
+
+
+
