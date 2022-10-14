@@ -132,7 +132,7 @@ function get_new_guess(guess)
     error("working in progress.")
 end
 
-function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
+function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any, shift_minimum::Integer = 32)
     answer_table = Dict{UInt64, return_type}()
     #We get a hash table but not a perfect one so we need to do it again.
     for i in maskedBitsIterator(mask)
@@ -152,6 +152,9 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any)
         limit -= 1
         if (limit <= 0)
             shift -= 1
+            if (shift < shift_minimum)
+                error("Cannot find magic bitboard with sufficiently small size (indicated by shift_minimum).")
+            end
             limit = guess_limits
         end
     end
