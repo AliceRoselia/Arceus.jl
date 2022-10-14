@@ -157,10 +157,15 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any,
             limit = guess_limits
         end
     end
+    answer_guess = guess
+    answer_shift = shift
     if (shift == initial_shift)
         trying_to_shrink = true
         while trying_to_shrink
+            answer_guess = guess
+            answer_shift = shift
             shift += 1
+            limit = guess_limits
             if (shift >= 64)
                 break
             end
@@ -176,6 +181,6 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any,
         end
     end
 
-    return guess, shift
+    return answer_guess, answer_shift
     #You can construct later.
 end
