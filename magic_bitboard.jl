@@ -184,3 +184,10 @@ function find_magic_bitboard(mask::UInt64, f::Function, return_type::Type = Any,
     return answer_guess, answer_shift
     #You can construct later.
 end
+
+function print_magic_bb(A::UInt64)
+    x = bitstring(A)
+    for i in 1:8:64
+        println(x[i:i+7])
+    end
+end
