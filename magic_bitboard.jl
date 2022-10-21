@@ -191,3 +191,4 @@ function print_magic_bb(A::UInt64)
         println(x[i:i+7])
     end
 end
+
