@@ -11,3 +11,13 @@ function test1_f(x::UInt64)
         return x%11
     end
 end
+
+magic, shift = find_magic_bitboard(mask, test1_f, UInt64)
+
+arr = fill_magic_bitboard(mask, test1_f, UInt64, guess, shift)
+#This assumes a successful load.
+
+@testset "A"
+for i in maskedBitsIterator(mask)
+    @test test1_f(i) == use_magic_bitboard(arr, mask, magic, shift, i)
+end
