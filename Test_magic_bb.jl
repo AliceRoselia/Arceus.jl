@@ -1,5 +1,6 @@
+using Test
 mask = UInt64(0x0000302510007000)
-print_magic_bb(mask)
+#print_magic_bb(mask)
 
 
 function test1_f(x::UInt64)
@@ -12,12 +13,13 @@ function test1_f(x::UInt64)
     end
 end
 
-magic, shift = find_magic_bitboard(mask, test1_f, UInt64)
+magic, shift = find_magic_bitboard(mask, test1_f, UInt64; guess_limits = 1000000)
 
-arr = fill_magic_bitboard(mask, test1_f, UInt64, guess, shift)
+arr = fill_magic_bitboard(mask, test1_f, UInt64, shift)
 #This assumes a successful load.
 
-@testset "A"
-for i in maskedBitsIterator(mask)
-    @test test1_f(i) == use_magic_bitboard(arr, mask, magic, shift, i)
+@testset "A" begin
+    for i in maskedBitsIterator(mask)
+        @test test1_f(i) === DONTCARE() || test1_f(i) == use_magic_bitboard(arr, mask, magic, shift, i)
+    end
 end
