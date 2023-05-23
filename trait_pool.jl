@@ -62,6 +62,7 @@ macro traitpool(x,y)
 end
 
 #For example... this would be.
+#=
 @traitpool "ABCDEF" begin
     @trait electro
     @trait flame
@@ -79,18 +80,7 @@ end
     @abstract_subpool reserve1 33-48
     @abstract_subpool reserve2 8
 end
-
-roles = PoolDescriptor(4,5,
-    Dict(:(attacker)=>4,:(support)=>5)
-)
-meta = PoolDescriptor(16,32,
-    Dict(:(earlygame)=>16,:(midgame)=>17,:(lategame)=>18)
-)
-a = PoolDescriptor(1,64, 
-Dict(:(electro)=>1,:(laser)=>2,:(flame)=>3, :(roles)=>roles,:(meta)=>meta
-
-)
-)
+=#
 
 
 
