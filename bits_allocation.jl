@@ -66,15 +66,15 @@ final_bit(x::FixedPosSubPoolInformation) = x.finish
 
 
 
-function remove_line_number_node(x)
+function remove_line_number_node!(x)
     return 
 end
 
 
-function remove_line_number_node(x::Expr)
+function remove_line_number_node!(x::Expr)
     x.args = [i for i in x.args if !(i isa LineNumberNode)]
     for i in x.args
-        remove_line_number_node(i)
+        remove_line_number_node!(i)
     end
 end
 
@@ -222,7 +222,7 @@ function parse_traits(traits)
     #Case 2: Trait subpool.
     #Case 3: Traits with position
     #Case 4: Subpools with positions.
-    remove_line_number_node(traits)
+    remove_line_number_node!(traits)
     parsed_pool = parse_traits_first_step(traits)
     #parsed_pool = organize_traits(parsed_pool)
     #println(organize_traits(parsed_pool))

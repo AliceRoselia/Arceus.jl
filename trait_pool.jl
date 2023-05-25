@@ -5,7 +5,7 @@ TRAIT_POOL_NAMES= Dict{String,Type{<:TraitPool}}()
 TRAIT_POOL_DESCRIPTORS = Dict{Type{<:TraitPool}, PoolDescriptor}()
 TRAIT_POOL_TYPES = Dict{Symbol, Type{<:TraitPool}}()
 getvalue(trait::TraitPool) = trait.value
-
+setvalue(trait::TraitPool, x::UInt64) = typeof(trait)(x)
 macro trait(x)
     return :(error("Trait is not executable.")) 
 end
@@ -99,13 +99,12 @@ macro clear_context()
     eval(:(($module_name).TRAIT_POOL_TYPES =  Dict{Symbol, Type{<:TraitPool}}()))
 end
 
-@make_traitpool "ABCDEF" Pokemon
 
 
 
 
 
-#End of part 1... defininig traits.
+#End of part 1... defining traits.
 
 
 
