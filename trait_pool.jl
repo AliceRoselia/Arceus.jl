@@ -55,12 +55,16 @@ macro traitpool(x,y)
             $trait_pool_name() = new()
             $trait_pool_name(x) = new(x)
         end;
-        ($module_name).TRAIT_POOL_NAMES[$x] = $trait_pool_name;#Todo... add module name.
+        ($module_name).TRAIT_POOL_NAMES[$x] = $trait_pool_name;
         ($module_name).TRAIT_POOL_DESCRIPTORS[$trait_pool_name] = $y)
     )
     
 end
 
+#Export this.
+function get_trait_pool_type(name)
+    return TRAIT_POOL_NAMES[name]
+end
 #For example... this would be.
 #=
 @traitpool "ABCDEF" begin
@@ -91,7 +95,32 @@ macro make_traitpool(traitpool, variable)
     traitpool_struct = TRAIT_POOL_NAMES[traitpool]
     module_name = @__MODULE__
     eval(:(($module_name).TRAIT_POOL_TYPES[$var_quot] = $traitpool_struct))
-    return esc(:($variable = $traitpool_struct()))
+    return esc(:($variable = $traitpool_struct(0)))
+end
+
+macro make_traitpool(traitpool,variable,traits_set)
+    ans = quote
+        @make_traitpool $traitpool $variable
+        @addtraits $variable $traits_set
+        
+    end
+    return esc(ans)
+end
+
+macro register_traitpool(traitpool, variable)
+    var_quot = Meta.quot(variable)
+    traitpool_struct = TRAIT_POOL_NAMES[traitpool]
+    module_name = @__MODULE__
+    eval(:(($module_name).TRAIT_POOL_TYPES[$var_quot] = $traitpool_struct))
+    return
+end
+
+macro copy_traitpool(variable1, variable2)
+    module_name = @__MODULE__
+    traitpool_struct = TRAIT_POOL_TYPES[variable1]
+    var_quot = Meta.quot(variable2)
+    eval(:(($module_name).TRAIT_POOL_TYPES[$var_quot] = $traitpool_struct))
+    return esc(:($variable2 = $variable1))
 end
 
 macro clear_context()
