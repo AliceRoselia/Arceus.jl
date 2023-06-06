@@ -52,6 +52,7 @@ function parse_traits_mod_args(args)
     return traitsArguments(Ones,Zeros,Depending)
 end
 
+#Fix this to handle abstract trait pools.
 function walk_trait_pool_descriptor(walk::Vector{Symbol}, trait_pool_descriptor::PoolDescriptor)
     #this is a concrete function.
     for i in walk
