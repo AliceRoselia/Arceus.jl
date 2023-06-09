@@ -176,7 +176,7 @@ function occupy_slot!(i::SubPoolInformation, fixed_pos_pool, occupied)
     error("Cannot organize bits as requested.")
 end
 
-function organize_traits(parsed_pool::Vector{PoolInformation}, max_bit = 64)
+function organize_traits(parsed_pool::Vector{<:PoolInformation}, max_bit = 64)
     for i in parsed_pool
         if (i isa SubPoolInformation)
             i.args = organize_traits(i.args)
@@ -185,8 +185,8 @@ function organize_traits(parsed_pool::Vector{PoolInformation}, max_bit = 64)
         end
     end
 
-    fixed_pos_pools = [i for i in parsed_pool if is_fixed_pos(i)]
-    dynamic_pos_pools = [i for i in parsed_pool if !is_fixed_pos(i)]
+    fixed_pos_pools::Vector{FixedPosPoolInformation} = [i for i in parsed_pool if is_fixed_pos(i)]
+    dynamic_pos_pools::Vector{PoolInformation} = [i for i in parsed_pool if !is_fixed_pos(i)]
     #println(fixed_pos_pools)
     #println(dynamic_pos_pools)
     occupied = falses(max_bit)

@@ -127,6 +127,9 @@ macro fliptraits(variable,args)
     return esc(:($variable= setvalue($variable,$answer)))
 end
 
+
+
+
 #=
 @traitpool "ABCDEF" begin
     @trait electro
