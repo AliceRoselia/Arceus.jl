@@ -1,4 +1,16 @@
+abstract type SubPool end
 
+#=
+Subpool
+    implicit info::PoolDescriptor
+    implicit parent_pool::Type{<:TraitPool}
+end
+=#
+
+SUB_POOL_NAMES= Dict{String,Type{<:SubPool}}()
+SUB_POOL_DESCRIPTORS = Dict{Type{<:SubPool}, PoolDescriptor}()
+SUB_POOL_PARENTS = Dict{Type{<:SubPool}, Type{<:TraitPool}}()
+SUB_POOL_TYPES = Dict{Symbol, Type{<:SubPool}}()
 
 function parse_subpool_source(x::Expr)
     @assert x.head == Symbol(".")
@@ -42,21 +54,56 @@ macro subpool(subpool,source, traitsset::Expr)
     parsed_traits = parse_traits_first_step(traitsset) 
     organized_traits = organize_traits(parsed_traits,SIZE)
     #println(format_traits(organized_traits,Pool_gotten.start,Pool_gotten.finish))
-    Pool_gotten.args[next_dest] = format_traits(organized_traits,Pool_gotten.start,Pool_gotten.finish)
+    Pool_gotten.args[next_dest] = y = format_traits(organized_traits,Pool_gotten.start,Pool_gotten.finish)
     #println(organized_traits)
 
 
-
+    sub_pool_name = gensym()
+    return esc(:(
+        struct $sub_pool_name<:($module_name).SubPool
+            value::UInt64
+            $sub_pool_name() = new()
+            $sub_pool_name(x) = new(x)
+        end;
+        ($module_name).SUB_POOL_NAMES[$subpool] = $sub_pool_name;
+        ($module_name).SUB_POOL_DESCRIPTORS[$sub_pool_name] = $y;
+        ($module_name).SUB_POOL_PARENTS[$sub_pool_name] = $trait_pool_type)
+    )
     #We need to return the subpool information and type.
-    return
 
     #For abstract subpools.
     #To be finished... parsed traits should only take the amount of bits allocated.
 
 end
+
 macro subpool(subpool,source)
+    module_name = @__MODULE__
+    trait_pool_name, trait_pool_walk = parse_subpool_source(source)
+    trait_pool_type = get_trait_pool_type(trait_pool_name)
+    trait_pool_descriptor = module_name.TRAIT_POOL_DESCRIPTORS[trait_pool_type]
+    Pool_gotten::PoolDescriptor = walk_trait_pool_descriptor(trait_pool_walk,trait_pool_descriptor)
+
+    sub_pool_name = gensym()
+    return esc(:(
+        struct $sub_pool_name<:($module_name).SubPool
+            value::UInt64
+            $sub_pool_name() = new()
+            $sub_pool_name(x) = new(x)
+        end;
+        ($module_name).SUB_POOL_NAMES[$subpool] = $sub_pool_name;
+        ($module_name).SUB_POOL_DESCRIPTORS[$sub_pool_name] = $Pool_gotten;
+        ($module_name).SUB_POOL_PARENTS[$sub_pool_name] = $trait_pool_type)
+    )
     #For normal subpools.
     #No need to alter the pool descriptor, but must return the subpool information and type.
+end
+
+macro make_subpool(subpool,variable)
+    var_quot = Meta.quot(variable)
+    subpool_struct = SUB_POOL_NAMES[subpool]
+    module_name = @__MODULE__
+    eval(:(($module_name).SUB_POOL_TYPES[$var_quot] = $subpool_struct))
+    return esc(:($variable = $subpool_struct(0)))
 end
 
 macro make_subpool(subpool, variable, parent::Symbol)
@@ -72,9 +119,6 @@ macro register_subpool(subpool,variable)
     #println(variable)
 end
 
-macro join_subpools(subpools)
-
-end
 
 macro join_subpools(base_pool, subpools)
 

@@ -1,10 +1,19 @@
 
 
-
+#To fix... get_trait_pool_descriptor for subpools too.
 function get_trait_pool_descriptor(variable)
+    #error("Not fixed yet.")
     module_name = @__MODULE__
-    trait_pool_type = module_name.TRAIT_POOL_TYPES[variable]
-    trait_pool_descriptor = module_name.TRAIT_POOL_DESCRIPTORS[trait_pool_type]
+    if haskey(module_name.TRAIT_POOL_TYPES,variable)
+
+        trait_pool_type = module_name.TRAIT_POOL_TYPES[variable]
+        trait_pool_descriptor = module_name.TRAIT_POOL_DESCRIPTORS[trait_pool_type]
+    elseif haskey(module_name.SUB_POOL_TYPES,variable)
+        sub_pool_type = module_name.SUB_POOL_TYPES[variable]
+        trait_pool_descriptor = module_name.SUB_POOL_DESCRIPTORS[sub_pool_type]
+    else
+        error("Cannot find pool descriptor.")
+    end
     return trait_pool_descriptor
 end
 
