@@ -110,13 +110,19 @@ macro make_subpool(subpool, variable, parent::Symbol)
 
 end
 
-macro make_subpool(subpool, variable, traitsset::Expr)
-
+macro make_subpool(subpool, variable, traits_set::Expr)
+    ans = quote
+        @make_subpool $subpool $variable
+        @addtraits $variable $traits_set
+    end
+    return esc(ans)
 end
 
 macro register_subpool(subpool,variable)
-    #println(subpool)
-    #println(variable)
+    var_quot = Meta.quot(variable)
+    subpool_struct = SUB_POOL_NAMES[subpool]
+    module_name = @__MODULE__
+    eval(:(($module_name).SUB_POOL_TYPES[$var_quot] = $subpool_struct))
 end
 
 
