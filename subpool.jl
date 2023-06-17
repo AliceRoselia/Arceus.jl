@@ -11,7 +11,8 @@ SUB_POOL_NAMES= Dict{String,Type{<:SubPool}}()
 SUB_POOL_DESCRIPTORS = Dict{Type{<:SubPool}, PoolDescriptor}()
 SUB_POOL_PARENTS = Dict{Type{<:SubPool}, Type{<:TraitPool}}()
 SUB_POOL_TYPES = Dict{Symbol, Type{<:SubPool}}()
-
+getvalue(trait::SubPool) = trait.value
+setvalue(trait::SubPool, x::UInt64) = typeof(trait)(x)
 function parse_subpool_source(x::Expr)
     @assert x.head == Symbol(".")
     a,b = parse_subpool_source(x.args[1])
@@ -107,7 +108,14 @@ macro make_subpool(subpool,variable)
 end
 
 macro make_subpool(subpool, variable, parent::Symbol)
-
+    pool_descriptor::PoolDescriptor = get_trait_pool_descriptor(parent)
+    subpool_descriptor::PoolDescriptor = SUB_POOL_DESCRIPTORS[SUB_POOL_NAMES[subpool]]
+    mask = reduce(Base.:|,UInt64(1).<<(collect(subpool_descriptor.start:subpool_descriptor.finish).-1);init=0)
+    ans = quote
+        @make_subpool $subpool $variable
+        $variable = setvalue($variable, getvalue($parent)&$mask)
+    end
+    return esc(ans)
 end
 
 macro make_subpool(subpool, variable, traits_set::Expr)
@@ -126,7 +134,31 @@ macro register_subpool(subpool,variable)
 end
 
 
+function parse_subpools_join_individual_arg(subpool::Expr)
+    @assert subpool.head == :macrocall
+    @assert subpool.args[1] == Symbol("@subpool")
+    return subpool.args[2]
+end
+
+function parse_subpools_join_args(subpools)
+    @assert subpools.head == :block
+    return [parse_subpools_join_individual_arg(x) for x in subpools.args]
+end
+
 macro join_subpools(base_pool, subpools)
+    remove_line_number_node!(subpools)
+    parsed_args = parse_subpools_join_args(subpools)
+    #println(parsed_args)
+    sub_pool_descriptors::Vector{PoolDescriptor} = [get_trait_pool_descriptor(i) for i in parsed_args]
+    masks = [reduce(Base.:|,UInt64(1).<<(collect(x.start:x.finish).-1);init=0) for x in sub_pool_descriptors]
+    mask::UInt64 = reduce(Base.:|,masks;init=0)
+    #display(mask)
+    answer = :(getvalue($base_pool)&~($mask))
+    for i in parsed_args
+        answer = :($answer |getvalue($i))
+    end
+    return esc(:($base_pool = setvalue($base_pool,$answer)))
+    #error("Working in progress.")
 
 end
 
@@ -174,3 +206,4 @@ end
     @subpool biometraits2
     @subpool metatraits
 end
+
