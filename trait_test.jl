@@ -8,3 +8,7 @@ macro hastrait(expression)
     trait_bit = UInt64(1)<<(traitnum-1)
     return esc(:(!iszero(getvalue($varname)&($trait_bit))))
 end
+
+macro usetrait(expression)
+    return nothing
+end

@@ -24,7 +24,7 @@ end
     @trait electro #Creating trait pool with the following traits.
     @trait flame
 end
-#Subpool also must be defined at compile time.
+#Subpool also must be defined in the global scope.
 @subpool "Biome" "ABCDEF".reserve1.biome_preference begin
     @trait beach_preference
     @trait ice_preference
@@ -40,9 +40,29 @@ end
     @trait ice_preference 0
     @trait volcanic_preference
 end
+#This "registers" subpool.
+#Usage...
+function x(biometraits3::get_trait_pool_type("Biome"))
+    @register_subpool "Biome" biometraits3 #Since this is a subpool.
+    #Use @register_traitpool for a non-subpool trait pool.
+end
+#Or you can maybe use generated function to manipulate the type yourself (see the register_traitpool macro) but that comes with its own issue (world age issue).
+#=
+macro register_traitpool(traitpool, variable)
+    var_quot = Meta.quot(variable)
+    traitpool_struct = TRAIT_POOL_NAMES[traitpool] # Remove this line if you're accepting trait pool type already.
+    module_name = @__MODULE__
+    eval(:(($module_name).TRAIT_POOL_TYPES[$var_quot] = $traitpool_struct))
+    return
+end
 
-@register_subpool "Biome" biometraits3
+This does make it a bit difficult to use generics. Should be fine because each trait pool has different traits and could be incompatible anyway.
 
+=#
+
+
+#This joins the subpools to their parent traitpool (Presume parent, otherwise they write whatever bits they happen to occupy).
+#This syntax is used for the sake of consistent syntax across the entire package.
 @join_subpools Pokemon begin
     @subpool biometraits2
     @subpool metatraits

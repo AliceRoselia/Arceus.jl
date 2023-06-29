@@ -163,47 +163,4 @@ macro join_subpools(base_pool, subpools)
 end
 
 
-@traitpool "ABCDEF" begin
-    @trait electro
-    @trait flame
-    @trait laser 2
-    @subpool roles begin
-        @trait attacker
-        @trait support
-        
-    end
-    @subpool meta 16-32 begin
-        @trait earlygame
-        @trait midgame
-        @trait lategame
-    end
-    @abstract_subpool reserve1 33-48
-    @abstract_subpool reserve2 8
-end
-
-@make_traitpool "ABCDEF" Pokemon begin
-    @trait electro
-    @trait flame
-end
-@subpool "Biome" "ABCDEF".reserve1.biome_preference begin
-    @trait beach_preference
-    @trait ice_preference
-    @trait volcanic_preference
-end
-@subpool "Meta" "ABCDEF".meta
-
-@make_subpool "Biome" biometraits Pokemon
-@make_subpool "Meta" metatraits Pokemon
-@make_subpool "Biome" biometraits2 begin
-    @trait beach_preference 1
-    @trait ice_preference 0
-    @trait volcanic_preference
-end
-
-@register_subpool "Biome" biometraits3
-
-@join_subpools Pokemon begin
-    @subpool biometraits2
-    @subpool metatraits
-end
 

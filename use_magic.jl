@@ -1,0 +1,246 @@
+struct magic_constructor{F<:Function}
+    mask::UInt64
+    magic::UInt64
+    shift::Int64
+    func::F
+
+end
+
+struct pre_magic_constructor{F<:Function}
+    mask::UInt64
+    func::F
+end
+#This MUST be a compile_time constant.
+
+abstract type Lookup end
+
+LOOK_UP_NAMES = Dict{String,Type{<:Lookup}}()
+LOOK_UP_TYPES = Dict{Symbol,Type{<:Lookup}}()
+
+
+function replace_property!(a::Expr, i, j)
+    if (a.head == i)
+        a.head = j
+    end
+    for arg in eachindex(a.args)
+        if a.args[arg]  isa Symbol
+            if (a.args[arg] == i)
+                
+                a.args[arg] = j
+            end
+        elseif a.args[arg]  isa Expr
+            replace_property!(a.args[arg] ,i,j)
+        end
+    end
+end
+
+
+function get_mask_from_rule(rule)
+    return UInt64(0)
+end
+
+
+macro lookup(var, parent_pool, rule)
+    f1 = gensym()
+    f2 = gensym()
+    x = gensym()
+    mask = get_mask_from_rule(rule) #TO BE COMPLETED.
+    magic = gensym()
+    shift = gensym()
+    #Do something with this.
+    parent_pool_type = get_trait_pool_type(parent_pool)
+
+    get_f2 = :($f2 = $x -> $f1($parent_pool_type($x)))
+    get_mask_and_magic = :(($magic,$shift) = find_magic_bitboard($mask,$f2))
+    magic_constructor_instantiate = :(magic_constructor($mask,$magic,$shift,$f2))
+    println(magic_constructor_instantiate)
+    return esc(:($f1 = @get_lookup_function $var $parent_pool $rule;
+        $get_f2;
+        #println($f2);
+        #println($f2 isa Function);
+        $get_mask_and_magic;
+        $magic_constructor_instantiate
+    ))
+end
+
+
+macro get_lookup_function(var, parent_pool, rule)
+    #Create a new struct type. 
+    #Lookup is a string...
+    x = gensym()
+    replace_property!(rule,var,x)
+    #println(var)
+    rule_function = :($x->eval($rule))
+    ans = :(@register_traitpool $parent_pool $x; $rule_function)
+    #println(rule_function)
+    return esc(ans)
+end
+
+#=
+macro make_lookup(lookup, variable)
+
+end
+
+macro register_lookup(lookup,variable)
+
+end
+=#
+
+
+
+
+
+
+
+macro get_lookup_value(variable, traitpool, Global = true)
+    if Global 
+        return esc(:(global $variable ;$variable[@get_lookup_index variable traitpool]))
+    else
+        return esc(:($variable[@get_lookup_index variable traitpool]))
+    end
+end
+
+macro get_lookup_index(variable, traitpool)
+    return :(1)
+end
+#println(@macroexpand @get_lookup_value x a)
+
+
+
+function parse_mask_join_individual_arg(mask_trait::Expr)
+    @assert mask_trait.head == :macrocall
+    @assert mask_trait.args[1] == Symbol("@trait")
+    return mask_trait.args[2]
+end
+
+function parse_mask_join_args(mask)
+    @assert mask.head == :block
+    return [parse_mask_join_individual_arg(x) for x in  mask.args]
+end
+macro getmask(pool, traits)
+    remove_line_number_node!(traits)
+    #println(parse_mask_join_args(traits))
+    mask_join_args = parse_mask_join_args(traits)
+    mask_join_args = [parse_walk_chain(i) for i in mask_join_args]
+    #println(mask_join_args)
+    module_name = @__MODULE__
+    trait_pool_type = get_trait_pool_type(pool)
+    trait_pool_descriptor = module_name.TRAIT_POOL_DESCRIPTORS[trait_pool_type]
+    arr = [walk_trait_pool_descriptor(x,trait_pool_descriptor) for x in mask_join_args]
+    #println(arr)
+    ans = reduce(Base.:|, UInt64(1).<<(arr.-1);init=0)
+    return :($ans)
+end
+
+
+
+@traitpool "ABCDEF" begin
+    @trait electro
+    @trait flame
+    @trait laser 2
+    @subpool roles begin
+        @trait attacker
+        @trait support
+        
+    end
+    @subpool meta 16-32 begin
+        @trait earlygame
+        @trait midgame
+        @trait lategame
+    end
+    @abstract_subpool reserve1 33-48
+    @abstract_subpool reserve2 8
+end
+
+@make_traitpool "ABCDEF" Pokemon begin
+    @trait electro
+    @trait flame
+end
+@subpool "Biome" "ABCDEF".reserve1.biome_preference begin
+    @trait beach_preference
+    @trait ice_preference
+    @trait volcanic_preference
+end
+@subpool "Meta" "ABCDEF".meta
+
+@make_subpool "Biome" biometraits Pokemon
+@make_subpool "Meta" metatraits Pokemon
+@make_subpool "Biome" biometraits2 begin
+    @trait beach_preference 1
+    @trait ice_preference 0
+    @trait volcanic_preference
+end
+
+@join_subpools Pokemon begin
+    @subpool biometraits2
+    @subpool metatraits
+end
+
+mask = @getmask "ABCDEF" begin 
+    @trait electro
+    @trait flame 
+    @trait reserve1.biome_preference.beach_preference
+end
+
+#println(mask)
+
+
+
+
+
+f1 = @lookup k "ABCDEF" begin
+    out = 1
+    if @hastrait k.electro
+        out *= 2
+    end
+    if @hastrait k.flame
+        out *= 1.5 
+    end
+    if @hastrait k.meta.earlygame
+        out *= 1.2
+    end
+    return out
+end
+
+println((@macroexpand @lookup k "ABCDEF" begin
+    out = 1
+    if @hastrait k.electro
+        out *= 2
+    end
+    if @hastrait k.flame
+        out *= 1.5 
+    end
+    if @hastrait k.meta.earlygame
+        out *= 1.2
+    end
+    return out
+end))
+
+println(f1.func(getvalue(Pokemon)))
+#println(f1(Pokemon))
+
+arr = Vector{Function}(undef,10)
+
+println("finish")
+#=
+for i in 1:10
+    arr[i] = @lookup x "ABCDEF" begin
+        
+        out = i
+        if @hastrait x.electro
+            out *= 2+i
+        end
+        if @hastrait x.flame
+            out *= 1.5 
+        end
+        if @hastrait x.meta.earlygame
+            out *= 1.2
+        end
+        if @hastrait x.meta.lategame
+            out += i
+        end
+        return out
+    end
+
+end
+=#

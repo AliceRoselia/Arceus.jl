@@ -7,4 +7,5 @@
     include("trait_test.jl") 
     include("subpool.jl") 
     include("clear_context.jl")
+    include("use_magic.jl")
 #end
