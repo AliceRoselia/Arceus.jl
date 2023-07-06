@@ -67,3 +67,37 @@ This does make it a bit difficult to use generics. Should be fine because each t
     @subpool biometraits2
     @subpool metatraits
 end
+
+
+
+#You can modify and copy trait pools.
+
+#TODO... doc for modification and copy.
+
+@copy_traitpool Pokemon Pokemon2
+@copy_traitpool Pokemon Pokemon3
+@copy_traitpool Pokemon Pokemon4
+@make_traitpool "ABCDEF" X
+@copy_traitpool Pokemon X
+#You can use copy_traitpool to existing trait pools too.
+
+@settrait Pokemon2 begin
+    @trait electro 
+    @trait roles.attacker 1
+    @trait roles.support X
+    @trait meta.earlygame X
+end
+
+@addtrait Pokemon3 begin
+    @trait electro 
+    @trait roles.attacker 1
+    @trait roles.support X
+    @trait meta.earlygame X
+end
+
+@removetrait Pokemon4 begin
+    @trait electro 
+    @trait roles.attacker 1
+    @trait roles.support X
+    @trait meta.earlygame X
+end

@@ -10,12 +10,13 @@ struct pre_magic_constructor{F<:Function}
     mask::UInt64
     func::F
 end
+
 #This MUST be a compile_time constant.
 
 abstract type Lookup end
 
-LOOK_UP_NAMES = Dict{String,Type{<:Lookup}}()
-LOOK_UP_TYPES = Dict{Symbol,Type{<:Lookup}}()
+#LOOK_UP_NAMES = Dict{String,Type{<:Lookup}}()
+LOOK_UP_TYPES = Dict{Symbol,magic_constructor}()
 
 
 function replace_property!(a::Expr, i, j)
@@ -36,6 +37,7 @@ end
 
 
 function get_mask_from_rule(rule)
+    error("Working in progress.")
     return UInt64(0)
 end
 
@@ -53,11 +55,9 @@ macro lookup(var, parent_pool, rule)
     get_f2 = :($f2 = $x -> $f1($parent_pool_type($x)))
     get_mask_and_magic = :(($magic,$shift) = find_magic_bitboard($mask,$f2))
     magic_constructor_instantiate = :(magic_constructor($mask,$magic,$shift,$f2))
-    println(magic_constructor_instantiate)
+    #println(magic_constructor_instantiate)
     return esc(:($f1 = @get_lookup_function $var $parent_pool $rule;
         $get_f2;
-        #println($f2);
-        #println($f2 isa Function);
         $get_mask_and_magic;
         $magic_constructor_instantiate
     ))
@@ -76,15 +76,31 @@ macro get_lookup_function(var, parent_pool, rule)
     return esc(ans)
 end
 
-#=
-macro make_lookup(lookup, variable)
 
+
+function get_lookup_constants(m::magic_constructor)
+    
+    #This function returns short, simple constants to be used as literals in macro.
+    return_type = Base.return_types(f,(UInt64))
+    
+    return (1<<(64-m.shift), m.mask,m.magic,m.shift, m.func, return_type)
+end
+
+macro make_lookup(lookup, variable)
+    var_quot = Meta.quot(variable)
+    module_name = @__MODULE__
+    eval(:(($module_name).LOOK_UP_TYPES[$var_quot] = $lookup))
+    error("Working in progress.")
+    #TODO... return something...
 end
 
 macro register_lookup(lookup,variable)
-
+    var_quot = Meta.quot(variable)
+    module_name = @__MODULE__
+    eval(:(($module_name).LOOK_UP_TYPES[$var_quot] = $lookup))
+    return
 end
-=#
+
 
 
 
@@ -94,16 +110,18 @@ end
 
 macro get_lookup_value(variable, traitpool, Global = true)
     if Global 
-        return esc(:(global $variable ;$variable[@get_lookup_index variable traitpool]))
+        return esc(:(global $variable ;$variable[begin + (@get_lookup_index variable traitpool)]))
     else
         return esc(:($variable[@get_lookup_index variable traitpool]))
     end
 end
 
 macro get_lookup_index(variable, traitpool)
-    return :(1)
+    #Index is 0-based here.
+    error("Working in progress.")
+    return :(0)
 end
-#println(@macroexpand @get_lookup_value x a)
+println(@macroexpand @get_lookup_value x a)
 
 
 
