@@ -73,6 +73,7 @@ end
 
 function remove_line_number_node!(x::Expr)
     x.args = [i for i in x.args if !(i isa LineNumberNode)]
+    #Base.remove_linenums!(x)
     for i in x.args
         remove_line_number_node!(i)
     end

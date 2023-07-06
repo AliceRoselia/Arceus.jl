@@ -35,10 +35,40 @@ function replace_property!(a::Expr, i, j)
     end
 end
 
+function add_mask_from_rule!(rule,arr)
+    return
+end
 
-function get_mask_from_rule(rule)
-    error("Working in progress.")
-    return UInt64(0)
+
+function add_mask_from_rule!(rule::Expr,arr)
+    if rule.head == :macrocall && (rule.args[1] ==Symbol("@hastrait") || rule.args[1] == Symbol("usetrait"))
+        #println(rule|>dump)
+        push!(arr,rule.args[2])
+    end
+    for i in rule.args
+        add_mask_from_rule!(i,arr)
+    end
+end
+
+function get_mask_from_rule(rule,parent_pool,var)
+    arr::Vector{Any} = []
+    remove_line_number_node!(rule)
+    add_mask_from_rule!(rule,arr)
+    arr2::Vector{Vector{Symbol}} = [parse_walk_chain(expression) for expression in arr]
+    #println(arr2)
+    module_name = @__MODULE__
+    trait_pool_descriptor = module_name.TRAIT_POOL_DESCRIPTORS[module_name.TRAIT_POOL_NAMES[parent_pool]]
+    ans = UInt64(0)
+    for i in arr2
+        if i[1] == var
+            traitnum = walk_trait_pool_descriptor(i[2:end],trait_pool_descriptor)
+            trait_bit = UInt64(1)<<(traitnum-1)
+            ans |= trait_bit
+        end
+    end
+    #println(rule|>dump)
+    #error("Working in progress.")
+    return ans
 end
 
 
@@ -46,7 +76,7 @@ macro lookup(var, parent_pool, rule)
     f1 = gensym()
     f2 = gensym()
     x = gensym()
-    mask = get_mask_from_rule(rule) #TO BE COMPLETED.
+    mask = get_mask_from_rule(deepcopy(rule),parent_pool,var) #TO BE COMPLETED.
     magic = gensym()
     shift = gensym()
     #Do something with this.
@@ -121,9 +151,6 @@ macro get_lookup_index(variable, traitpool)
     error("Working in progress.")
     return :(0)
 end
-println(@macroexpand @get_lookup_value x a)
-
-
 
 function parse_mask_join_individual_arg(mask_trait::Expr)
     @assert mask_trait.head == :macrocall
@@ -219,7 +246,9 @@ f1 = @lookup k "ABCDEF" begin
     end
     return out
 end
-
+#Make_lookup is global scope only.
+@register_lookup f1 x_arr
+#=
 println((@macroexpand @lookup k "ABCDEF" begin
     out = 1
     if @hastrait k.electro
@@ -233,7 +262,7 @@ println((@macroexpand @lookup k "ABCDEF" begin
     end
     return out
 end))
-
+=#
 println(f1.func(getvalue(Pokemon)))
 #println(f1(Pokemon))
 
