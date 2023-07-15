@@ -1,7 +1,9 @@
 #This is a testable documentation showing all the features.
 
-
+using .Arceus
 #Traitpool must be defined at compile time.
+println("Checkpoint!")
+
 @traitpool "ABCDEF" begin
     @trait electro
     @trait flame #Defining trait without bits.
@@ -19,11 +21,15 @@
     @abstract_subpool reserve1 33-48 #Defining start and finish bits.
     @abstract_subpool reserve2 8 #Defining the size, but not the sub_trait.
 end
+println("Checkpoint2!")
+
 #This will register the variable at compile time and construct a trait pool at runtime.
 @make_traitpool "ABCDEF" Pokemon begin
     @trait electro #Creating trait pool with the following traits.
     @trait flame
 end
+
+println("Checkpoint3!")
 #Subpool also must be defined in the global scope.
 @subpool "Biome" "ABCDEF".reserve1.biome_preference begin
     @trait beach_preference
@@ -72,8 +78,7 @@ end
 
 #You can modify and copy trait pools.
 
-#TODO... doc for modification and copy.
-
+#copying needs its own macro too.
 @copy_traitpool Pokemon Pokemon2
 @copy_traitpool Pokemon Pokemon3
 @copy_traitpool Pokemon Pokemon4
@@ -81,23 +86,49 @@ end
 @copy_traitpool Pokemon X
 #You can use copy_traitpool to existing trait pools too.
 
-@settrait Pokemon2 begin
+@settraits Pokemon2 begin
     @trait electro 
     @trait roles.attacker 1
     @trait roles.support X
     @trait meta.earlygame X
 end
 
-@addtrait Pokemon3 begin
+@addtraits Pokemon3 begin
     @trait electro 
     @trait roles.attacker 1
     @trait roles.support X
     @trait meta.earlygame X
 end
 
-@removetrait Pokemon4 begin
+@removetraits Pokemon4 begin
     @trait electro 
     @trait roles.attacker 1
     @trait roles.support X
     @trait meta.earlygame X
 end
+
+
+
+f1 = @lookup k "ABCDEF" begin
+    out = 1.0
+    if @hastrait k.electro
+        out *= 2
+    end
+    if @hastrait k.flame
+        out *= 1.5 
+    end
+    if @hastrait k.meta.earlygame
+        out *= 1.2
+    end
+    return out
+end
+println(f1)
+#If the variable is not registered, it is not seen in the module, the result is error finding variable of that name.
+@register_variable f1
+#Making lookup.
+println(@macroexpand @make_lookup f1 x_arr)
+#We then can finally make the lookup function.
+@make_lookup f1 x_arr
+lookup_val = @get_lookup_value x_arr Pokemon
+
+println(lookup_val)

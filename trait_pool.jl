@@ -62,9 +62,7 @@ macro traitpool(x,y)
 end
 
 #Export this.
-function get_trait_pool_type(name)
-    return TRAIT_POOL_NAMES[name]
-end
+
 #For example... this would be.
 #=
 @traitpool "ABCDEF" begin

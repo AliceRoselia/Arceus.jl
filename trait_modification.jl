@@ -17,6 +17,16 @@ function get_trait_pool_descriptor(variable)
     return trait_pool_descriptor
 end
 
+function get_trait_pool_type(name)
+    if (haskey(TRAIT_POOL_NAMES,name))
+        return TRAIT_POOL_NAMES[name]
+    elseif (haskey(SUB_POOL_NAMES,name))
+        return SUB_POOL_NAMES[name]
+    else
+        error("Cannot find trait pool type.")
+    end
+end
+
 function parse_walk_chain(chain::Symbol)
     return [chain]
 end

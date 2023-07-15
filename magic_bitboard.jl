@@ -109,15 +109,15 @@ function find_magic_bitboard(mask::UInt64, f, return_type::Type = Any; shift_min
     #You can construct later.
 end
 
-function fill_magic_bitboard(mask::UInt64, f, return_type::Type, shift)
+function fill_magic_bitboard(mask::UInt64,magic, f, return_type::Type, shift)
     A = Vector{return_type}(undef, 1<<(64-shift))
     answer_table = Dict{UInt64, return_type}()
     for traits in maskedBitsIterator(mask)
         Temp::Union{return_type, DONTCARE} = f(traits)
         if Temp !== DONTCARE()
             ans = Temp
-            index = ((traits*magic)>>shift)+1
-            A[index] = ans
+            index = ((traits*magic)>>shift)
+            A[begin+index] = ans
         end
     end
     

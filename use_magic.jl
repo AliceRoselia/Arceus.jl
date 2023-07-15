@@ -82,11 +82,11 @@ macro lookup(var, parent_pool, rule)
     #Do something with this.
     parent_pool_type = get_trait_pool_type(parent_pool)
 
-    get_f2 = :($f2 = $x -> $f1($parent_pool_type($x)))
+    get_f2 = :(const $f2 = $x -> $f1($parent_pool_type($x)))
     get_mask_and_magic = :(($magic,$shift) = find_magic_bitboard($mask,$f2))
     magic_constructor_instantiate = :(magic_constructor($mask,$magic,$shift,$f2))
     #println(magic_constructor_instantiate)
-    return esc(:($f1 = @get_lookup_function $var $parent_pool $rule;
+    return esc(:(const $f1 = @get_lookup_function $var $parent_pool $rule;
         $get_f2;
         $get_mask_and_magic;
         $magic_constructor_instantiate
@@ -100,27 +100,77 @@ macro get_lookup_function(var, parent_pool, rule)
     x = gensym()
     replace_property!(rule,var,x)
     #println(var)
-    rule_function = :($x->eval($rule))
+    rule_function = :($x->$rule)
     ans = :(@register_traitpool $parent_pool $x; $rule_function)
     #println(rule_function)
     return esc(ans)
 end
-
+#=
+macro get_lookup_function_2(var, parent_pool, rule)
+    #Create a new struct type. 
+    #Lookup is a string...
+    x = gensym()
+    f1 = gensym()
+    f2 = gensym()
+    replace_property!(rule,var,x)
+    #println(var)
+    rule_function = :(const $f1 = $x->$rule)
+    parent_pool_type = get_trait_pool_type(parent_pool)
+    println("parent_pool: ", parent_pool_type)
+    get_f2 = :($f2 = $x -> $f1($parent_pool_type($x)))
+    eval(:(@register_traitpool $parent_pool $x;))
+    ans = :($rule_function; $get_f2; $f2)
+    #println(rule_function)
+    return esc(ans)
+end
+=#
 
 
 function get_lookup_constants(m::magic_constructor)
     
     #This function returns short, simple constants to be used as literals in macro.
-    return_type = Base.return_types(f,(UInt64))
+    return_type = Base.return_types(m.func,(UInt64,))[1]
     
     return (1<<(64-m.shift), m.mask,m.magic,m.shift, m.func, return_type)
+end
+
+function get_caller_module()
+    #Thanks pfitzseb.
+    s = stacktrace()
+    MOD = @__MODULE__
+    for i in s
+        if (i.linfo isa Core.MethodInstance)
+            #println(i.linfo.def.module)
+            if (i.linfo.def.module != MOD && i.linfo.def.module != (Base))
+                return i.linfo.def.module
+            end
+        end
+    end
+    return @__MODULE__
+end
+
+function setstate(x)
+    global STATE = x
+end
+
+function getstate()
+    global STATE
+    return STATE
+end
+
+
+macro register_variable(variable)
+    module_name = @__MODULE__
+    to_eval = :($variable = getstate())
+    ans = :(setstate($variable);@eval($module_name,$to_eval))
+    return esc(ans)
 end
 
 macro make_lookup(lookup, variable)
     var_quot = Meta.quot(variable)
     module_name = @__MODULE__
     eval(:(($module_name).LOOK_UP_TYPES[$var_quot] = $lookup))
-    error("Working in progress.")
+    return esc(:($variable = fill_magic_bitboard(($lookup).mask,$lookup.magic,($lookup).func,Base.return_types(($lookup).func,(UInt64,))[1],($lookup).shift)))
     #TODO... return something...
 end
 
@@ -140,16 +190,24 @@ end
 
 macro get_lookup_value(variable, traitpool, Global = true)
     if Global 
-        return esc(:(global $variable ;$variable[begin + (@get_lookup_index variable traitpool)]))
+        return esc(:(global $variable ;$variable[begin + (@get_lookup_index $variable $traitpool)]))
     else
-        return esc(:($variable[@get_lookup_index variable traitpool]))
+        return esc(:($variable[@get_lookup_index $variable $traitpool]))
     end
 end
 
 macro get_lookup_index(variable, traitpool)
     #Index is 0-based here.
-    error("Working in progress.")
-    return :(0)
+    #println(variable)
+    #println(traitpool)
+    #println(LOOK_UP_TYPES[variable])
+    #println(TRAIT_POOL_TYPES[traitpool])
+    lookup_type = LOOK_UP_TYPES[variable]
+    lookup_mask = lookup_type.mask
+    lookup_magic = lookup_type.magic
+    lookup_shift = lookup_type.shift
+    #error("Working in progress.")
+    return esc(:(((getvalue($traitpool)&$lookup_mask)*$lookup_magic)>>$lookup_shift))
 end
 
 function parse_mask_join_individual_arg(mask_trait::Expr)
@@ -177,117 +235,3 @@ macro getmask(pool, traits)
     return :($ans)
 end
 
-
-
-@traitpool "ABCDEF" begin
-    @trait electro
-    @trait flame
-    @trait laser 2
-    @subpool roles begin
-        @trait attacker
-        @trait support
-        
-    end
-    @subpool meta 16-32 begin
-        @trait earlygame
-        @trait midgame
-        @trait lategame
-    end
-    @abstract_subpool reserve1 33-48
-    @abstract_subpool reserve2 8
-end
-
-@make_traitpool "ABCDEF" Pokemon begin
-    @trait electro
-    @trait flame
-end
-@subpool "Biome" "ABCDEF".reserve1.biome_preference begin
-    @trait beach_preference
-    @trait ice_preference
-    @trait volcanic_preference
-end
-@subpool "Meta" "ABCDEF".meta
-
-@make_subpool "Biome" biometraits Pokemon
-@make_subpool "Meta" metatraits Pokemon
-@make_subpool "Biome" biometraits2 begin
-    @trait beach_preference 1
-    @trait ice_preference 0
-    @trait volcanic_preference
-end
-
-@join_subpools Pokemon begin
-    @subpool biometraits2
-    @subpool metatraits
-end
-
-mask = @getmask "ABCDEF" begin 
-    @trait electro
-    @trait flame 
-    @trait reserve1.biome_preference.beach_preference
-end
-
-#println(mask)
-
-
-
-
-
-f1 = @lookup k "ABCDEF" begin
-    out = 1
-    if @hastrait k.electro
-        out *= 2
-    end
-    if @hastrait k.flame
-        out *= 1.5 
-    end
-    if @hastrait k.meta.earlygame
-        out *= 1.2
-    end
-    return out
-end
-#Make_lookup is global scope only.
-@register_lookup f1 x_arr
-#=
-println((@macroexpand @lookup k "ABCDEF" begin
-    out = 1
-    if @hastrait k.electro
-        out *= 2
-    end
-    if @hastrait k.flame
-        out *= 1.5 
-    end
-    if @hastrait k.meta.earlygame
-        out *= 1.2
-    end
-    return out
-end))
-=#
-println(f1.func(getvalue(Pokemon)))
-#println(f1(Pokemon))
-
-arr = Vector{Function}(undef,10)
-
-println("finish")
-#=
-for i in 1:10
-    arr[i] = @lookup x "ABCDEF" begin
-        
-        out = i
-        if @hastrait x.electro
-            out *= 2+i
-        end
-        if @hastrait x.flame
-            out *= 1.5 
-        end
-        if @hastrait x.meta.earlygame
-            out *= 1.2
-        end
-        if @hastrait x.meta.lategame
-            out += i
-        end
-        return out
-    end
-
-end
-=#

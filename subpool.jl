@@ -133,6 +133,14 @@ macro register_subpool(subpool,variable)
     eval(:(($module_name).SUB_POOL_TYPES[$var_quot] = $subpool_struct))
 end
 
+macro copy_subpool(variable1, variable2)
+    module_name = @__MODULE__
+    traitpool_struct = SUB_POOL_TYPES[variable1]
+    var_quot = Meta.quot(variable2)
+    eval(:(($module_name).SUB_POOL_TYPES[$var_quot] = $traitpool_struct))
+    return esc(:($variable2 = $variable1))
+end
+
 
 function parse_subpools_join_individual_arg(subpool::Expr)
     @assert subpool.head == :macrocall
@@ -161,6 +169,4 @@ macro join_subpools(base_pool, subpools)
     #error("Working in progress.")
 
 end
-
-
 
