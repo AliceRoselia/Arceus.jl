@@ -1,3 +1,5 @@
+using Random
+
 struct maskedBitsIterator
     mask::UInt64
     reverse_mask::UInt64

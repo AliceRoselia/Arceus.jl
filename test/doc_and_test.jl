@@ -1,6 +1,6 @@
 #This is a testable documentation showing all the features.
 
-using .Arceus
+using Arceus
 #Traitpool must be defined at compile time.
 println("Checkpoint!")
 
